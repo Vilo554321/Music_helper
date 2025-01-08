@@ -1,6 +1,7 @@
 package sk.upjs.ics.android.musichelper;
 
 import android.os.Bundle;
+import android.os.PersistableBundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -24,6 +25,10 @@ public class CreateRoomActivity extends AppCompatActivity {
     private ServerSocket serverSocket;
     private ExecutorService executorService;
 
+    private List<String> songsList = new ArrayList<>();
+
+    private static final String SONGS_LIST_KEY = "songsList";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,7 +37,10 @@ public class CreateRoomActivity extends AppCompatActivity {
         songsRecyclerView = findViewById(R.id.recyclerViewSongs);
         songsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        List<String> songsList = new ArrayList<>();
+        if (savedInstanceState != null) {
+            songsList = savedInstanceState.getStringArrayList(SONGS_LIST_KEY);
+        }
+
         songsAdapter = new SongsAdapter(songsList, song -> {
             songsList.remove(song);
             songsAdapter.notifyDataSetChanged();
@@ -57,7 +65,7 @@ public class CreateRoomActivity extends AppCompatActivity {
                         InetAddress.getByName("255.255.255.255"), 8081);
                 while (true) {
                     broadcastSocket.send(packet);
-                    Thread.sleep(3000); // Posielanie broadcastu každé 3 sekundy
+                    Thread.sleep(3000);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -120,6 +128,12 @@ public class CreateRoomActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return "127.0.0.1";
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putStringArrayList(SONGS_LIST_KEY, new ArrayList<>(songsList));
     }
 
     @Override
