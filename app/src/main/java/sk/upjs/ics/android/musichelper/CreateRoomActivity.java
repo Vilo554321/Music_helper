@@ -1,7 +1,6 @@
 package sk.upjs.ics.android.musichelper;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
