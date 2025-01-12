@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">Music helper</string>
+    <string name="app_name">MUSIC HELPER</string>
+    <string name="create_room">Create Room</string>
+    <string name="join_room">Join Room</string>
+    <string name="header_text">Welcome to</string>
+    <string name="music_helper">MUSIC HELPER</string>
 </resources>
