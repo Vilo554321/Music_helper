@@ -4,4 +4,7 @@
     <string name="join_room">Join Room</string>
     <string name="header_text">Welcome to</string>
     <string name="music_helper">MUSIC HELPER</string>
+    <string name="send">Send</string>
+    <string name="enter_song_name">ENTER SONG NAME</string>
+    <string name="yswaotdjd">Your song will appear on the DJ\'s device</string>
 </resources>
