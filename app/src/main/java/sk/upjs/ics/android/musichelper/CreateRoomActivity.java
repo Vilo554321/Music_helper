@@ -1,7 +1,9 @@
 package sk.upjs.ics.android.musichelper;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,7 +21,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class CreateRoomActivity extends AppCompatActivity {
-    private RecyclerView songsRecyclerView;
     private SongsAdapter songsAdapter;
     private ServerSocket serverSocket;
     private ExecutorService executorService;
@@ -28,12 +29,13 @@ public class CreateRoomActivity extends AppCompatActivity {
 
     private static final String SONGS_LIST_KEY = "songsList";
 
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_room);
 
-        songsRecyclerView = findViewById(R.id.recyclerViewSongs);
+        RecyclerView songsRecyclerView = findViewById(R.id.recyclerViewSongs);
         songsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         if (savedInstanceState != null) {
@@ -90,6 +92,7 @@ public class CreateRoomActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void handleClient(Socket clientSocket, List<String> songsList) {
         executorService.execute(() -> {
             try {
@@ -130,7 +133,7 @@ public class CreateRoomActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putStringArrayList(SONGS_LIST_KEY, new ArrayList<>(songsList));
     }
