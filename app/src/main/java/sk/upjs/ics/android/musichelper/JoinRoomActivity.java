@@ -13,7 +13,6 @@ import java.net.Socket;
 
 public class JoinRoomActivity extends AppCompatActivity {
     private EditText songEditText;
-    private Button sendButton;
     private String serverIp;
 
     @Override
@@ -22,7 +21,7 @@ public class JoinRoomActivity extends AppCompatActivity {
         setContentView(R.layout.activity_join_room);
 
         songEditText = findViewById(R.id.etSongName);
-        sendButton = findViewById(R.id.btnSend);
+        Button sendButton = findViewById(R.id.btnSend);
 
         discoverServer();
 
