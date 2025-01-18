@@ -60,7 +60,6 @@ public class CreateRoomActivity extends AppCompatActivity {
 
         executorService = Executors.newFixedThreadPool(4);
 
-        // Rýchla kontrola, či už roomka existuje
         executorService.execute(() -> {
             if (isRoomAlreadyCreated()) {
                 new Handler(Looper.getMainLooper()).post(() -> {
@@ -76,33 +75,26 @@ public class CreateRoomActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Skontroluje, či už existuje aktívna roomka na WiFi sieti
-     */
     private boolean isRoomAlreadyCreated() {
         try (DatagramSocket socket = new DatagramSocket()) {
-            socket.setSoTimeout(1000); // 1 sekunda timeout na odpoveď
+            socket.setSoTimeout(1000);
 
             InetAddress broadcastAddress = getBroadcastAddress();
             byte[] sendData = ROOM_CHECK_MESSAGE.getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, ROOM_CHECK_PORT);
             socket.send(sendPacket);
 
-            byte[] receiveData = new byte[16]; // Krátky buffer, nepotrebujeme veľa dát
+            byte[] receiveData = new byte[16];
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
             socket.receive(receivePacket);
 
             String response = new String(receivePacket.getData(), 0, receivePacket.getLength());
             return ROOM_EXISTS_RESPONSE.equals(response);
-
         } catch (IOException e) {
             return false;
         }
     }
 
-    /**
-     * DJ odpovedá na požiadavky o existencii roomky
-     */
     private void startRoomCheckServer() {
         executorService.execute(() -> {
             try (DatagramSocket serverSocket = new DatagramSocket(ROOM_CHECK_PORT)) {
@@ -121,7 +113,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                         serverSocket.send(sendPacket);
                     }
                 }
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
         });
     }
 
@@ -150,7 +143,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                     broadcastSocket.send(packet);
                     Thread.sleep(3000);
                 }
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         });
     }
 
@@ -162,7 +156,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                     Socket clientSocket = serverSocket.accept();
                     handleClient(clientSocket, songsList);
                 }
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
         });
     }
 
@@ -181,7 +176,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                     });
                 }
                 clientSocket.close();
-            } catch (IOException ignored) { }
+            } catch (IOException ignored) {
+            }
         });
     }
 
@@ -196,7 +192,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                     }
                 }
             }
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
         return "127.0.0.1";
     }
 
@@ -214,6 +211,7 @@ public class CreateRoomActivity extends AppCompatActivity {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) {
+        }
     }
 }
