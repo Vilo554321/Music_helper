@@ -1,7 +1,12 @@
 package sk.upjs.ics.android.musichelper;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,10 +29,14 @@ public class CreateRoomActivity extends AppCompatActivity {
     private SongsAdapter songsAdapter;
     private ServerSocket serverSocket;
     private ExecutorService executorService;
+    private boolean isRoomRunning = false;
 
     private List<String> songsList = new ArrayList<>();
-
     private static final String SONGS_LIST_KEY = "songsList";
+
+    private static final int ROOM_CHECK_PORT = 5000;
+    private static final String ROOM_CHECK_MESSAGE = "ROOM_CHECK";
+    private static final String ROOM_EXISTS_RESPONSE = "ROOM_EXISTS";
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
@@ -51,44 +60,109 @@ public class CreateRoomActivity extends AppCompatActivity {
 
         executorService = Executors.newFixedThreadPool(4);
 
-        startBroadcast();
-        startServer(songsList);
+        // Rýchla kontrola, či už roomka existuje
+        executorService.execute(() -> {
+            if (isRoomAlreadyCreated()) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(this, "Miestnosť je už vyvorená!", Toast.LENGTH_LONG).show();
+                    finish();
+                });
+            } else {
+                isRoomRunning = true;
+                startBroadcast();
+                startServer(songsList);
+                startRoomCheckServer();
+            }
+        });
+    }
+
+    /**
+     * Skontroluje, či už existuje aktívna roomka na WiFi sieti
+     */
+    private boolean isRoomAlreadyCreated() {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            socket.setSoTimeout(1000); // 1 sekunda timeout na odpoveď
+
+            InetAddress broadcastAddress = getBroadcastAddress();
+            byte[] sendData = ROOM_CHECK_MESSAGE.getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, ROOM_CHECK_PORT);
+            socket.send(sendPacket);
+
+            byte[] receiveData = new byte[16]; // Krátky buffer, nepotrebujeme veľa dát
+            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            socket.receive(receivePacket);
+
+            String response = new String(receivePacket.getData(), 0, receivePacket.getLength());
+            return ROOM_EXISTS_RESPONSE.equals(response);
+
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * DJ odpovedá na požiadavky o existencii roomky
+     */
+    private void startRoomCheckServer() {
+        executorService.execute(() -> {
+            try (DatagramSocket serverSocket = new DatagramSocket(ROOM_CHECK_PORT)) {
+                while (isRoomRunning) {
+                    byte[] receiveData = new byte[16];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                    serverSocket.receive(receivePacket);
+
+                    String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                    if (ROOM_CHECK_MESSAGE.equals(message)) {
+                        InetAddress clientAddress = receivePacket.getAddress();
+                        int clientPort = receivePacket.getPort();
+
+                        byte[] sendData = ROOM_EXISTS_RESPONSE.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientAddress, clientPort);
+                        serverSocket.send(sendPacket);
+                    }
+                }
+            } catch (IOException ignored) { }
+        });
+    }
+
+    private InetAddress getBroadcastAddress() throws IOException {
+        WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (wifi != null) {
+            int ipAddress = wifi.getDhcpInfo().ipAddress;
+            int broadcast = (ipAddress & 0x00FFFFFF) | 0xFF000000;
+            byte[] quads = new byte[4];
+            for (int k = 0; k < 4; k++)
+                quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
+            return InetAddress.getByAddress(quads);
+        }
+        return InetAddress.getByName("255.255.255.255");
     }
 
     private void startBroadcast() {
-        new Thread(() -> {
-            try {
-                DatagramSocket broadcastSocket = new DatagramSocket();
+        executorService.execute(() -> {
+            try (DatagramSocket broadcastSocket = new DatagramSocket()) {
                 broadcastSocket.setBroadcast(true);
                 String message = "SERVER_IP:" + getLocalIpAddress();
                 byte[] buffer = message.getBytes();
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length,
                         InetAddress.getByName("255.255.255.255"), 8081);
-                while (true) {
+                while (isRoomRunning) {
                     broadcastSocket.send(packet);
                     Thread.sleep(3000);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Broadcast error: " + e.getMessage());
-            }
-        }).start();
+            } catch (Exception ignored) { }
+        });
     }
 
     private void startServer(List<String> songsList) {
         executorService.execute(() -> {
             try {
                 serverSocket = new ServerSocket(8080);
-                System.out.println("Server is running on port 8080...");
-                while (!serverSocket.isClosed()) {
+                while (isRoomRunning) {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Client connected: " + clientSocket.getInetAddress());
                     handleClient(clientSocket, songsList);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Server error: " + e.getMessage());
-            }
+            } catch (IOException ignored) { }
         });
     }
 
@@ -101,17 +175,13 @@ public class CreateRoomActivity extends AppCompatActivity {
                 int bytesRead;
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     String songName = new String(buffer, 0, bytesRead).trim();
-                    System.out.println("Received song: " + songName);
                     runOnUiThread(() -> {
                         songsList.add(songName);
                         songsAdapter.notifyDataSetChanged();
                     });
                 }
                 clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Error handling client: " + e.getMessage());
-            }
+            } catch (IOException ignored) { }
         });
     }
 
@@ -126,9 +196,7 @@ public class CreateRoomActivity extends AppCompatActivity {
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception ignored) { }
         return "127.0.0.1";
     }
 
@@ -141,12 +209,11 @@ public class CreateRoomActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isRoomRunning = false;
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException ignored) { }
     }
 }
