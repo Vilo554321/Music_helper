@@ -7,4 +7,6 @@
     <string name="send">Send</string>
     <string name="enter_song_name">ENTER SONG NAME</string>
     <string name="yswaotdjd">Your song will appear on the DJ\'s device</string>
+    <string name="delete">Delete</string>
+    <string name="song_name">Song Name</string>
 </resources>
