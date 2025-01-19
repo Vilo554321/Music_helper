@@ -9,4 +9,6 @@
     <string name="yswaotdjd">Your song will appear on the DJ\'s device</string>
     <string name="delete">Delete</string>
     <string name="song_name">Song Name</string>
+    <string name="songs">SONGS:</string>
+    <string name="logomusichelper">LogoMUSICHELPER</string>
 </resources>
