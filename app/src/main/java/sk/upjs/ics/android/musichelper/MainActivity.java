@@ -15,9 +15,13 @@ public class MainActivity extends AppCompatActivity {
         Button createRoomButton = findViewById(R.id.btnCreateRoom);
         Button joinRoomButton = findViewById(R.id.btnJoinRoom);
 
-        createRoomButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, CreateRoomActivity.class)));
+        createRoomButton.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, CreateRoomActivity.class));
+        });
 
-        joinRoomButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, JoinRoomActivity.class)));
+        joinRoomButton.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, JoinRoomActivity.class));
+        });
     }
 }
 
