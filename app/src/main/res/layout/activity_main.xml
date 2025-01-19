@@ -26,6 +26,7 @@
 
 
     <ImageView
+        android:contentDescription="@string/logoaplikacie"
         android:id="@+id/imageView"
         android:layout_width="120dp"
         android:layout_height="120dp"

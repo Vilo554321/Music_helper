@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingBottom="15sp"
-        android:text="SONGS:"
+        android:text="@string/songs"
         android:textColor="@color/main_orange"
         android:textSize="20sp"
         android:textStyle="bold" />
