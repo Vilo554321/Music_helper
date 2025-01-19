@@ -2,6 +2,7 @@ package sk.upjs.ics.android.musichelper;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,7 +22,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,6 +40,9 @@ public class CreateRoomActivity extends AppCompatActivity {
     private static final int ROOM_CHECK_PORT = 5000;
     private static final String ROOM_CHECK_MESSAGE = "ROOM_CHECK";
     private static final String ROOM_EXISTS_RESPONSE = "ROOM_EXISTS";
+
+    private static final String PREFS_NAME = "RoomPrefs";
+    private static final String SAVED_SONGS_KEY = "savedSongs";
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
@@ -63,7 +69,7 @@ public class CreateRoomActivity extends AppCompatActivity {
         executorService.execute(() -> {
             if (isRoomAlreadyCreated()) {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(this, "Miestnosť je už vyvorená!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Miestnosť je už vytvorená!", Toast.LENGTH_LONG).show();
                     finish();
                 });
             } else {
@@ -73,6 +79,8 @@ public class CreateRoomActivity extends AppCompatActivity {
                 startRoomCheckServer();
             }
         });
+
+        loadSavedSongs();
     }
 
     private boolean isRoomAlreadyCreated() {
@@ -203,8 +211,24 @@ public class CreateRoomActivity extends AppCompatActivity {
         outState.putStringArrayList(SONGS_LIST_KEY, new ArrayList<>(songsList));
     }
 
+    private void loadSavedSongs() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        Set<String> savedSongs = prefs.getStringSet(SAVED_SONGS_KEY, new HashSet<>());
+        songsList.clear();
+        songsList.addAll(savedSongs);
+    }
+
+    private void saveSongs() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putStringSet(SAVED_SONGS_KEY, new HashSet<>(songsList));
+        editor.apply();
+    }
+
     @Override
     protected void onDestroy() {
+        saveSongs();
+        
         super.onDestroy();
         isRoomRunning = false;
         try {
